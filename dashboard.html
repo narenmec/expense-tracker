@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Expense Tracker — Dashboard</title>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- SheetJS (for Excel export) -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+  <!-- Firebase compat SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-database-compat.js"></script>
+
+  <!-- Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    :root {
+      --accent: #1976d2;
+      --accent-light: #e3f2fd;
+      --card: #fff;
+      --bg: #f8fafc;
+      --muted: #6b7280;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --border: #e2e8f0;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      height: 100%;
+      margin: 0;
+      background: var(--bg);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: #1e293b;
+      line-height: 1.5;
+    }
+
+    .wrap { 
+      max-width: 1200px; 
+      margin: 20px auto; 
+      padding: 16px; 
+    }
+
+    header { 
+      display: flex; 
+      gap: 16px; 
+      align-items: center; 
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    header h1 { 
+      margin: 0; 
+      font-size: 24px; 
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .top-cards { 
+      display: grid; 
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px; 
+      margin: 16px 0; 
+    }
+
+    .card {
+      background: var(--card);
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      transition: transform 0.2s, box-shadow 0.2s;
+      border-left: 4px solid var(--accent);
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+
+    .card.income { border-left-color: var(--success); }
+    .card.expense { border-left-color: var(--danger); }
+    .card.balance { border-left-color: var(--accent); }
+    .card.count { border-left-color: var(--warning); }
+
+    .card .title { 
+      font-size: 14px; 
+      color: var(--muted);
+      font-weight: 500;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .card .value { 
+      font-size: 24px; 
+      font-weight: 700;
+      margin: 0;
+    }
+
+    .card .trend {
+      font-size: 12px;
+      margin-top: 6px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .trend.up { color: var(--success); }
+    .trend.down { color: var(--danger); }
+
+    .controls {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 16px;
+      background: var(--card);
+      padding: 16px;
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+    }
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .filter-group label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--muted);
+    }
+
+    .input, select {
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: white;
+      font-size: 14px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .input:focus, select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
+    }
+
+    .btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.2s, transform 0.1s;
+    }
+
+    .btn:hover {
+      background: #1565c0;
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn.secondary { 
+      background: #64748b; 
+    }
+    .btn.secondary:hover { 
+      background: #475569; 
+    }
+
+    .btn.success { 
+      background: var(--success); 
+    }
+    .btn.success:hover { 
+      background: #0da271; 
+    }
+
+    .btn.danger { 
+      background: var(--danger); 
+    }
+    .btn.danger:hover { 
+      background: #dc2626; 
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 900px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    .panel {
+      background: var(--card);
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+    }
+
+    .panel h3 {
+      margin: 0 0 16px 0;
+      font-size: 18px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    canvas { 
+      max-width: 100%; 
+    }
+
+    #table-container { 
+      margin-top: 12px; 
+      overflow: auto; 
+      max-height: 300px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+
+    table { 
+      width: 100%; 
+      border-collapse: collapse; 
+      font-size: 14px;
+    }
+
+    th, td { 
+      padding: 12px; 
+      border-bottom: 1px solid var(--border); 
+      text-align: left; 
+    }
+
+    th { 
+      background: #f8fafc; 
+      position: sticky; 
+      top: 0; 
+      font-weight: 600;
+      color: #475569;
+    }
+
+    tr:hover {
+      background: #f8fafc;
+    }
+
+    .small { 
+      font-size: 12px; 
+      color: var(--muted); 
+    }
+
+    .actions { 
+      margin-left: auto; 
+      display: flex; 
+      gap: 10px; 
+      flex-wrap: wrap;
+    }
+
+    .searchBox {
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      min-width: 200px;
+      font-size: 14px;
+    }
+
+    /* === Summary Section === */
+    .summary-card {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 20px;
+      margin-top: 20px;
+      box-shadow: var(--shadow);
+      grid-column: 1 / -1;
+    }
+
+    #categorySummary {
+      margin-top: 1rem;
+      background: #f8fafc;
+      border-radius: 10px;
+      padding: 16px;
+      max-height: 400px;
+      overflow-y: auto;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .category-item {
+      background: white;
+      margin: 8px 0;
+      padding: 12px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      transition: background 0.2s;
+    }
+
+    .category-item:hover {
+      background: #f1f5f9;
+    }
+
+    .cat-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 500;
+    }
+
+    .subcategory-list {
+      margin-left: 20px;
+      padding: 8px 0;
+      display: none;
+    }
+
+    .subcategory-item {
+      font-size: 13px;
+      color: #475569;
+      padding: 6px 0;
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px dashed #e2e8f0;
+    }
+
+    .subcategory-item:last-child {
+      border-bottom: none;
+    }
+
+    .progress-bar {
+      height: 6px;
+      background: #e2e8f0;
+      border-radius: 3px;
+      margin-top: 6px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 3px;
+      transition: width 0.5s ease;
+    }
+
+    .stats-row {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .stat-item {
+      flex: 1;
+      background: white;
+      padding: 16px;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 20px;
+      font-weight: 700;
+      margin: 8px 0;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .loading {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255,255,255,.3);
+      border-radius: 50%;
+      border-top-color: #fff;
+      animation: spin 1s ease-in-out infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 12px 20px;
+      border-radius: 8px;
+      color: white;
+      font-weight: 500;
+      box-shadow: var(--shadow);
+      z-index: 1000;
+      transform: translateX(120%);
+      transition: transform 0.3s ease;
+    }
+
+    .notification.show {
+      transform: translateX(0);
+    }
+
+    .notification.success {
+      background: var(--success);
+    }
+
+    .notification.error {
+      background: var(--danger);
+    }
+
+    .notification.info {
+      background: var(--accent);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--muted);
+    }
+
+    .empty-state i {
+      font-size: 48px;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    .type-badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .type-income {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .type-expense {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .type-transfer {
+      background: #e0e7ff;
+      color: #3730a3;
+    }
+
+    .amount-positive {
+      color: var(--success);
+      font-weight: 600;
+    }
+
+    .amount-negative {
+      color: var(--danger);
+      font-weight: 600;
+    }
+
+    .last-update {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 8px;
+    }
+	
+	/* === Bigger, Cleaner Filter Inputs === */
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: flex-end;
+  margin-bottom: 20px;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  min-width: 170px;
+}
+
+.filter-group label {
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 6px;
+  font-size: 15px;
+}
+
+.input {
+  padding: 10px 14px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  width: 170px;         /* ✅ Bigger width */
+  height: 42px;         /* ✅ Taller height */
+  transition: all 0.2s ease;
+}
+
+.input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 4px rgba(59, 130, 246, 0.3);
+  outline: none;
+}
+
+/* Buttons */
+.btn {
+  padding: 10px 18px;
+  font-size: 16px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  background: #3b82f6;
+  color: white;
+  transition: 0.2s;
+}
+
+.btn.secondary {
+  background: #6b7280;
+}
+
+.btn:hover {
+  opacity: 0.9;
+}
+
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <header>
+      <h1><i class="fas fa-chart-line"></i> Expense Tracker Dashboard</h1>
+      <div class="actions">
+        <input id="searchInput" class="searchBox" placeholder="Search notes, category, account..." />
+        <button id="exportCsvBtn" class="btn success"><i class="fas fa-file-csv"></i> Export CSV</button>
+        <button id="exportXlsxBtn" class="btn success"><i class="fas fa-file-excel"></i> Export Excel</button>
+        <button id="refreshBtn" class="btn secondary"><i class="fas fa-sync-alt"></i> Refresh</button>
+      </div>
+    </header>
+
+    <!-- Filters -->
+    <div class="controls">
+      <div class="filter-group">
+        <label for="fromDate"><i class="fas fa-calendar-alt"></i> From</label>
+        <input id="fromDate" type="date" class="input">
+      </div>
+      <div class="filter-group">
+        <label for="toDate"><i class="fas fa-calendar-alt"></i> To</label>
+        <input id="toDate" type="date" class="input">
+      </div>
+      <div class="filter-group">
+        <label for="categorySelect"><i class="fas fa-tags"></i> Category</label>
+        <select id="categorySelect" class="input">
+          <option value="">All Categories</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label for="typeSelect"><i class="fas fa-exchange-alt"></i> Type</label>
+        <select id="typeSelect" class="input">
+          <option value="">All Types</option>
+          <option value="Exp.">Expense</option>
+          <option value="Income">Income</option>
+          <option value="Transfer-In">Transfer-In</option>
+          <option value="Transfer-Out">Transfer-Out</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label for="accountSelect"><i class="fas fa-wallet"></i> Account</label>
+        <select id="accountSelect" class="input">
+          <option value="">All Accounts</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:8px;align-items:flex-end;">
+        <button id="applyBtn" class="btn"><i class="fas fa-filter"></i> Apply</button>
+        <button id="resetBtn" class="btn secondary"><i class="fas fa-redo"></i> Reset</button>
+      </div>
+    </div>
+
+    
+<!-- Top summary cards -->
+<div class="top-cards">
+  <div class="card income">
+    <div class="title"><i class="fas fa-arrow-down"></i> Total Income</div>
+    <div id="incomeVal" class="value">₹ 0</div>
+    <div id="incomeTrend" class="trend"></div>
+  </div>
+
+  <div class="card expense">
+    <div class="title"><i class="fas fa-arrow-up"></i> Total Expense</div>
+    <div id="expenseVal" class="value">₹ 0</div>
+    <div id="expenseTrend" class="trend"></div>
+  </div>
+
+  <div class="card balance">
+    <div class="title"><i class="fas fa-balance-scale"></i> Balance</div>
+    <div id="balanceVal" class="value">₹ 0</div>
+    <div id="balanceTrend" class="trend"></div>
+  </div>
+
+  <div class="card count">
+    <div class="title"><i class="fas fa-list"></i> Record Count</div>
+    <div id="countVal" class="value">0</div>
+    <div class="last-update" id="lastUpdate">Last updated: --</div>
+  </div>
+</div>
+
+<!-- 💰 Durga Devi Summary -->
+<div class="top-cards">
+  <div class="card income">
+    <div class="title"><i class="fas fa-hand-holding-usd"></i> Durga Devi Income</div>
+    <div id="durgaIncome" class="value">₹ 0</div>
+    <div class="trend" id="durgaIncomeTrend"></div>
+  </div>
+
+  <div class="card expense">
+    <div class="title"><i class="fas fa-credit-card"></i> Debt Settlement (Durga Devi)</div>
+    <div id="durgaExpense" class="value">₹ 0</div>
+    <div class="trend" id="durgaExpenseTrend"></div>
+  </div>
+
+  <div class="card balance">
+    <div class="title"><i class="fas fa-scale-balanced"></i> Net Difference</div>
+    <div id="durgaBalance" class="value">₹ 0</div>
+    <div class="trend" id="durgaBalanceTrend"></div>
+  </div>
+</div>
+
+    <!-- Charts Grid -->
+    <div class="grid" style="margin-top:16px">
+      <div class="panel">
+        <h3><i class="fas fa-chart-pie"></i> Expenses by Category</h3>
+        <canvas id="pieChart"></canvas>
+        <div style="margin-top:16px; display:flex; gap:8px;">
+          <button id="showAllBtn" class="btn secondary">
+            <i class="fas fa-eye"></i> Show All Records
+          </button>
+          <button id="toggleChartBtn" class="btn secondary">
+            <i class="fas fa-exchange-alt"></i> Toggle Chart Type
+          </button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3><i class="fas fa-chart-bar"></i> Monthly Income vs Expense</h3>
+        <canvas id="barChart" height="120"></canvas>
+        <h3 style="margin-top:20px;"><i class="fas fa-list-alt"></i> Expense Summary by Category</h3>
+        <div id="categorySummary"></div>
+      </div>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="stats-row">
+      <div class="stat-item">
+        <div class="stat-label">Average Monthly Expense</div>
+        <div id="avgMonthlyExpense" class="stat-value">₹ 0</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Largest Expense</div>
+        <div id="largestExpense" class="stat-value">₹ 0</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Most Used Category</div>
+        <div id="mostUsedCategory" class="stat-value">--</div>
+      </div>
+    </div>
+
+    <!-- Data Table -->
+    <div class="panel" style="margin-top:16px">
+      <h3><i class="fas fa-table"></i> Records</h3>
+      <div id="table-container">
+        <div class="empty-state">
+          <i class="fas fa-inbox"></i>
+          <p>No records to display. Upload data or adjust your filters.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="notification" class="notification"></div>
+
+   <!-- Dashboard logic -->
+  <script src="dashboard.js"></script>
+</body>
+</html>

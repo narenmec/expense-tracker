@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>📤 Upload Data — Expense Tracker</title>
+
+  <!-- ✅ SheetJS for Excel parsing -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+  <!-- ✅ Firebase (compat SDKs) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
+  <style>
+    :root {
+      --accent: #1976d2;
+      --bg: #f5f7fb;
+      --card: #fff;
+      --text: #333;
+    }
+
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: var(--bg);
+      font-family: "Inter", Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding-top: 40px;
+    }
+
+    .container {
+      background: var(--card);
+      padding: 30px 40px;
+      border-radius: 16px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+      width: 90%;
+      max-width: 700px;
+      text-align: center;
+      animation: fadeIn 0.6s ease-in-out;
+    }
+
+    h1 {
+      color: var(--accent);
+      font-size: 22px;
+      margin-bottom: 10px;
+    }
+
+    p {
+      color: var(--text);
+      font-size: 14px;
+      margin-bottom: 25px;
+    }
+
+    input[type="file"] {
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      background: white;
+      width: 100%;
+    }
+
+    button {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 15px;
+      margin-top: 15px;
+      transition: all 0.2s;
+      width: 100%;
+    }
+
+    button:hover {
+      background: #125da3;
+    }
+
+    .btn-secondary {
+      background: #444;
+      margin-top: 10px;
+    }
+
+    .btn-secondary:hover {
+      background: #222;
+    }
+
+    #status {
+      margin-top: 20px;
+      font-size: 14px;
+      color: #555;
+    }
+
+    #previewTable {
+      margin-top: 20px;
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 13px;
+    }
+
+    #previewTable th, #previewTable td {
+      border: 1px solid #ddd;
+      padding: 6px;
+      text-align: center;
+    }
+
+    #previewTable th {
+      background: #f0f0f0;
+      position: sticky;
+      top: 0;
+    }
+
+    .preview-container {
+      max-height: 250px;
+      overflow-y: auto;
+      margin-top: 10px;
+      border: 1px solid #eee;
+      border-radius: 8px;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>📤 Upload Excel to Firebase</h1>
+    <p>Select an Excel file (.xlsx or .xls) containing your expense records.</p>
+
+    <input type="file" id="excelFile" accept=".xlsx, .xls" />
+    <button id="previewBtn">🔍 Preview Data</button>
+    <button id="uploadBtn">🚀 Upload to Firebase</button>
+    <button class="btn-secondary" onclick="window.location.href='index.html'">🏠 Back to Home</button>
+
+    <div id="status">No file selected.</div>
+
+    <div class="preview-container" id="previewContainer" style="display:none;">
+      <h3>📋 Preview (first 10 rows)</h3>
+      <table id="previewTable"></table>
+    </div>
+  </div>
+
+  <script>
+    // ✅ Firebase Config
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "expensetracker-bfe87.firebaseapp.com",
+      databaseURL: "https://expensetracker-bfe87-default-rtdb.asia-southeast1.firebasedatabase.app/",
+      projectId: "expensetracker-bfe87",
+      storageBucket: "expensetracker-bfe87.appspot.com",
+      messagingSenderId: "810418504190",
+      appId: "1:810418504190:web:e8c7dfc94b78a45142eb22"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    let parsedData = [];
+
+    // 🔍 Preview Excel file with date conversion
+    document.getElementById("previewBtn").addEventListener("click", () => {
+      const file = document.getElementById("excelFile").files[0];
+      if (!file) {
+        document.getElementById("status").textContent = "⚠️ Please select a file first.";
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: "array", cellDates: true });
+        const sheetName = workbook.SheetNames[0];
+        
+        // Parse with date conversion
+        const rawData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { raw: false });
+        
+        // Process dates and sanitize data
+        parsedData = rawData.map(row => {
+          const processedRow = {};
+          Object.keys(row).forEach(key => {
+            let value = row[key];
+            
+            // Convert Excel serial numbers to dates
+            if (key.toLowerCase().includes('date') || key.toLowerCase().includes('period')) {
+              if (typeof value === 'number' && value > 25569) { // Excel date serial number
+                // Convert Excel serial number to JavaScript Date
+                const excelEpoch = new Date(1899, 11, 30);
+                const jsDate = new Date(excelEpoch.getTime() + value * 86400000);
+                value = jsDate.toLocaleDateString('en-IN'); // Format as DD/MM/YYYY
+              } else if (value instanceof Date) {
+                value = value.toLocaleDateString('en-IN');
+              }
+            }
+            
+            // Sanitize key for Firebase
+            const sanitizedKey = key.replace(/[.#$/[\]]/g, "_");
+            processedRow[sanitizedKey] = value;
+          });
+          return processedRow;
+        });
+
+        showPreview(parsedData);
+        document.getElementById("status").textContent = `✅ Loaded ${parsedData.length} rows from ${sheetName}`;
+      };
+      reader.readAsArrayBuffer(file);
+    });
+
+    // 📋 Show preview table (first 10 rows)
+    function showPreview(data) {
+      const container = document.getElementById("previewContainer");
+      const table = document.getElementById("previewTable");
+      container.style.display = "block";
+      table.innerHTML = "";
+
+      if (data.length === 0) {
+        table.innerHTML = "<tr><td>No data found</td></tr>";
+        return;
+      }
+
+      const headers = Object.keys(data[0]);
+      let thead = "<tr>" + headers.map(h => `<th>${h}</th>`).join("") + "</tr>";
+      let tbody = data.slice(0, 10)
+                      .map(row => "<tr>" + headers.map(h => `<td>${row[h] ?? ""}</td>`).join("") + "</tr>")
+                      .join("");
+
+      table.innerHTML = thead + tbody;
+    }
+
+    // 🚀 Upload to Firebase with proper sanitization
+    document.getElementById("uploadBtn").addEventListener("click", async () => {
+      if (parsedData.length === 0) {
+        document.getElementById("status").textContent = "⚠️ Please preview a file before uploading.";
+        return;
+      }
+
+      document.getElementById("status").textContent = "⏳ Uploading to Firebase...";
+      
+      try {
+        // Upload sanitized data
+        await db.ref("expenses").set(parsedData);
+        const now = new Date().toLocaleString();
+        await db.ref("lastUploadTime").set(now);
+        document.getElementById("status").textContent = "✅ Upload successful! (" + now + ")";
+      } catch (err) {
+        document.getElementById("status").textContent = "❌ Error: " + err.message;
+        console.error("Upload error:", err);
+      }
+    });
+  </script>
+</body>
+</html>

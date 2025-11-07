@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>💰 Expense Tracker — Home</title>
+  <style>
+    :root {
+      --accent: #1976d2;
+      --bg: #f5f7fb;
+      --card: #fff;
+      --text: #333;
+    }
+
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: var(--bg);
+      font-family: "Inter", Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .container {
+      background: var(--card);
+      padding: 40px 50px;
+      border-radius: 16px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+      text-align: center;
+      width: 320px;
+      animation: fadeIn 0.6s ease-in-out;
+    }
+
+    h1 {
+      color: var(--accent);
+      font-size: 22px;
+      margin-bottom: 20px;
+    }
+
+    p {
+      color: var(--text);
+      font-size: 14px;
+      margin-bottom: 30px;
+    }
+
+    button {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 15px;
+      width: 100%;
+      transition: all 0.2s;
+    }
+
+    button:hover {
+      background: #125da3;
+    }
+
+    .btn-secondary {
+      background: #444;
+      margin-top: 12px;
+    }
+
+    .btn-secondary:hover {
+      background: #222;
+    }
+
+    footer {
+      font-size: 12px;
+      color: #777;
+      margin-top: 25px;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>💰 Expense Tracker</h1>
+    <p>Manage and visualize your financial data easily.</p>
+
+    <button onclick="window.location.href='upload.html'">📤 Upload Data</button>
+    <button class="btn-secondary" onclick="window.location.href='dashboard.html'">📊 View Dashboard</button>
+
+    <footer>© 2025 Expense Tracker</footer>
+  </div>
+</body>
+</html>
