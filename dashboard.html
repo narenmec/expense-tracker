@@ -15,6 +15,9 @@
   <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-database-compat.js"></script>
 
+	<!-- ✅ Centralized config file -->
+	<script src="firebase-config.js"></script>
+
   <!-- Font Awesome for icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
@@ -540,6 +543,106 @@
   opacity: 0.9;
 }
 
+
+/* ✅ Responsive filter inputs: full width on mobile */
+@media (max-width: 768px) {
+  .controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filter-group {
+    width: 100%;
+  }
+
+  .filter-group .input,
+  .filter-group select {
+    width: 100%;
+  }
+
+  .btn,
+  .btn.secondary {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Summary Container */
+.summary-container {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  padding: 20px 24px;
+  margin-top: 24px;
+}
+
+.summary-title {
+  font-size: 1.4em;
+  font-weight: 600;
+  color: #222;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Inside cards layout */
+.summary-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.summary-cards .card {
+  flex: 1 1 220px;
+  border-radius: 12px;
+  padding: 16px;
+  text-align: left;
+  background: #f9fafc;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  transition: transform 0.2s ease;
+}
+
+.summary-cards .card:hover {
+  transform: translateY(-3px);
+}
+
+.summary-cards .title {
+  font-size: 0.9em;
+  color: #555;
+  margin-bottom: 6px;
+}
+
+.summary-cards .value {
+  font-size: 1.4em;
+  font-weight: 700;
+  color: #222;
+}
+
+/* Value and Trend Inline Layout */
+.value-trend {
+  display: flex;
+  align-items: flex-start;   /* ✅ aligns both items to the left vertically */
+  justify-content: flex-start; /* ✅ aligns items horizontally to the left */
+  gap: 10px; /* spacing between value and trend icon/text */
+  text-align: left;
+}
+
+.value-trend .value {
+  font-size: 1.4em;
+  font-weight: 700;
+  color: #222;
+  text-align: left;
+}
+
+.value-trend .trend {
+  font-size: 0.9em;
+  color: #666;
+  text-align: left;
+}
+
+
+
   </style>
 </head>
 
@@ -621,26 +724,34 @@
   </div>
 </div>
 
-<!-- 💰 Durga Devi Summary -->
-<div class="top-cards">
-  <div class="card income">
-    <div class="title"><i class="fas fa-hand-holding-usd"></i> Durga Devi Income</div>
-    <div id="durgaIncome" class="value">₹ 0</div>
-    <div class="trend" id="durgaIncomeTrend"></div>
-  </div>
+<!-- 💰 Durga Devi Summary Container -->
+<div class="summary-container">
+  <h2 class="summary-title">💰 Durga Devi Summary</h2>
 
-  <div class="card expense">
-    <div class="title"><i class="fas fa-credit-card"></i> Debt Settlement (Durga Devi)</div>
-    <div id="durgaExpense" class="value">₹ 0</div>
-    <div class="trend" id="durgaExpenseTrend"></div>
-  </div>
+  <div class="summary-cards">
+    <div class="card income">
+      <div class="title"><i class="fas fa-hand-holding-usd"></i> Durga Devi Income</div>
+      <div id="durgaIncome" class="value">₹ 0</div>
+      <div class="trend" id="durgaIncomeTrend"></div>
+    </div>
 
-  <div class="card balance">
-    <div class="title"><i class="fas fa-scale-balanced"></i> Net Difference</div>
-    <div id="durgaBalance" class="value">₹ 0</div>
-    <div class="trend" id="durgaBalanceTrend"></div>
+    <div class="card expense">
+      <div class="title"><i class="fas fa-credit-card"></i> Debt Settlement (Durga Devi)</div>
+      <div id="durgaExpense" class="value">₹ 0</div>
+      <div class="trend" id="durgaExpenseTrend"></div>
+    </div>
+
+    <div class="card balance">
+	  <div class="title"><i class="fas fa-scale-balanced"></i> Net Difference</div>
+	  <div class="value-trend">
+		<div id="durgaBalance" class="value">₹ 0</div>
+		<div class="trend" id="durgaBalanceTrend"></div>
+	  </div>
+	</div>
+
   </div>
 </div>
+
 
     <!-- Charts Grid -->
     <div class="grid" style="margin-top:16px">
@@ -666,7 +777,7 @@
     </div>
 
     <!-- Stats Row -->
-    <div class="stats-row">
+    <!--    <div class="stats-row">
       <div class="stat-item">
         <div class="stat-label">Average Monthly Expense</div>
         <div id="avgMonthlyExpense" class="stat-value">₹ 0</div>
