@@ -1,3 +1,4 @@
+
 // === DOM Elements ===
 const fileInput = document.getElementById("excelFile");
 const uploadBtn = document.getElementById("uploadBtn");
@@ -7,152 +8,96 @@ const categoryFilter = document.getElementById("categoryFilter");
 const lastUploadDiv = document.getElementById("lastUpload"); // ✅ New element
 let chart;
 
-// === Firebase Upload with Deep Sanitization ===
-uploadBtn.addEventListener("click", async () => {
-  const file = fileInput.files[0];
-  if (!file) return alert("⚠️ Please select an Excel file first!");
 
-  if (!confirm("This will delete old records and upload fresh data. Continue?")) return;
+    let parsedData = [];
 
-  try {
-    // 1️⃣ Clear old data
-    await db.ref("expenses").remove();
-    console.log("🧹 Old data cleared from Firebase");
-
-    // 2️⃣ Read Excel file
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      const data = new Uint8Array(e.target.result);
-      const workbook = XLSX.read(data, { type: "array" });
-      const sheetName = workbook.SheetNames[0];
-      const sheet = workbook.Sheets[sheetName];
-      const jsonData = XLSX.utils.sheet_to_json(sheet);
-
-      console.log("✅ Parsed Data:", jsonData);
-
-      // ✅ Deep sanitize keys recursively
-      function sanitizeKeys(obj) {
-        if (Array.isArray(obj)) {
-          return obj.map(sanitizeKeys);
-        } else if (obj !== null && typeof obj === "object") {
-          const clean = {};
-          Object.entries(obj).forEach(([key, value]) => {
-            const safeKey = key.replace(/[.#$/[\]\/\s]/g, "_").trim();
-            clean[safeKey] = sanitizeKeys(value);
+    // 🔍 Preview Excel file with date conversion
+    document.getElementById("previewBtn").addEventListener("click", () => {
+      const file = document.getElementById("excelFile").files[0];
+      if (!file) {
+        document.getElementById("status").textContent = "⚠️ Please select a file first.";
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: "array", cellDates: true });
+        const sheetName = workbook.SheetNames[0];
+        
+        // Parse with date conversion
+        const rawData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { raw: false });
+        
+        // Process dates and sanitize data
+        parsedData = rawData.map(row => {
+          const processedRow = {};
+          Object.keys(row).forEach(key => {
+            let value = row[key];
+            
+            // Convert Excel serial numbers to dates
+            if (key.toLowerCase().includes('date') || key.toLowerCase().includes('period')) {
+              if (typeof value === 'number' && value > 25569) { // Excel date serial number
+                // Convert Excel serial number to JavaScript Date
+                const excelEpoch = new Date(1899, 11, 30);
+                const jsDate = new Date(excelEpoch.getTime() + value * 86400000);
+                value = jsDate.toLocaleDateString('en-IN'); // Format as DD/MM/YYYY
+              } else if (value instanceof Date) {
+                value = value.toLocaleDateString('en-IN');
+              }
+            }
+            
+            // Sanitize key for Firebase
+            const sanitizedKey = key.replace(/[.#$/[\]]/g, "_");
+            processedRow[sanitizedKey] = value;
           });
-          return clean;
-        }
-        return obj;
+          return processedRow;
+        });
+
+        showPreview(parsedData);
+        document.getElementById("status").textContent = `✅ Loaded ${parsedData.length} rows from ${sheetName}`;
+      };
+      reader.readAsArrayBuffer(file);
+    });
+
+    // 📋 Show preview table (first 10 rows)
+    function showPreview(data) {
+      const container = document.getElementById("previewContainer");
+      const table = document.getElementById("previewTable");
+      container.style.display = "block";
+      table.innerHTML = "";
+
+      if (data.length === 0) {
+        table.innerHTML = "<tr><td>No data found</td></tr>";
+        return;
       }
 
-      const sanitizedData = jsonData.map(sanitizeKeys);
-      console.log("🧩 Sanitized Data Example:", sanitizedData[0]);
+      const headers = Object.keys(data[0]);
+      let thead = "<tr>" + headers.map(h => `<th>${h}</th>`).join("") + "</tr>";
+      let tbody = data.slice(0, 10)
+                      .map(row => "<tr>" + headers.map(h => `<td>${row[h] ?? ""}</td>`).join("") + "</tr>")
+                      .join("");
 
-      // 3️⃣ Upload to Firebase safely
-      const uploadPromises = sanitizedData.map((row) =>
-        db.ref("expenses").push(row)
-      );
-      await Promise.all(uploadPromises);
+      table.innerHTML = thead + tbody;
+    }
 
-      // 4️⃣ Save Last Upload Timestamp
-      const timestamp = new Date().toLocaleString();
-      await db.ref("meta/lastUpload").set(timestamp);
+    // 🚀 Upload to Firebase with proper sanitization
+    document.getElementById("uploadBtn").addEventListener("click", async () => {
+      if (parsedData.length === 0) {
+        document.getElementById("status").textContent = "⚠️ Please preview a file before uploading.";
+        return;
+      }
 
-      alert("✅ All records uploaded successfully!");
-      updateLastUploadUI(timestamp);
-    };
+      document.getElementById("status").textContent = "⏳ Uploading to Firebase...";
+      
+      try {
+        // Upload sanitized data
+        await db.ref("expenses").set(parsedData);
+        const now = new Date().toLocaleString();
+        await db.ref("lastUploadTime").set(now);
+        document.getElementById("status").textContent = "✅ Upload successful! (" + now + ")";
+      } catch (err) {
+        document.getElementById("status").textContent = "❌ Error: " + err.message;
+        console.error("Upload error:", err);
+      }
+    });
 
-    reader.readAsArrayBuffer(file);
-  } catch (error) {
-    console.error("❌ Upload failed:", error);
-    alert("❌ Error uploading data: " + error.message);
-  }
-});
-
-
-// === Load Data from Firebase ===
-loadDataBtn.addEventListener("click", async () => {
-  const snapshot = await db.ref("expenses").get();
-  if (!snapshot.exists()) return alert("No data found in Firebase!");
-
-  const data = Object.values(snapshot.val());
-  displayTable(data);
-  populateCategoryFilter(data);
-  showChart(data);
-  fetchLastUploadTime();
-});
-
-// === Fetch & Show Last Upload Time ===
-async function fetchLastUploadTime() {
-  const snap = await db.ref("meta/lastUpload").get();
-  if (snap.exists()) updateLastUploadUI(snap.val());
-}
-
-function updateLastUploadUI(time) {
-  lastUploadDiv.innerHTML = `🕒 <b>Last Upload:</b> ${time}`;
-}
-
-// === Display Table ===
-function displayTable(data) {
-  let html = "<table border='1'><tr>";
-  Object.keys(data[0]).forEach((key) => (html += `<th>${key}</th>`));
-  html += "</tr>";
-
-  data.forEach((row) => {
-    html += "<tr>";
-    Object.values(row).forEach((val) => (html += `<td>${val ?? ""}</td>`));
-    html += "</tr>";
-  });
-
-  html += "</table>";
-  tableContainer.innerHTML = html;
-}
-
-// === Populate Category Filter ===
-function populateCategoryFilter(data) {
-  const categories = [...new Set(data.map((d) => d.Category || d.category))];
-  categoryFilter.innerHTML = `<option value="">All</option>`;
-  categories.forEach((cat) => {
-    categoryFilter.innerHTML += `<option value="${cat}">${cat}</option>`;
-  });
-
-  categoryFilter.onchange = () => {
-    const filtered = categoryFilter.value
-      ? data.filter((d) => (d.Category || d.category) === categoryFilter.value)
-      : data;
-    displayTable(filtered);
-    showChart(filtered);
-  };
-}
-
-// === Show Chart ===
-function showChart(data) {
-  const expense = data
-    .filter((d) => (d["Income/Expense"] || d.type) === "Exp.")
-    .reduce((sum, d) => sum + Number(d.Amount || d.amount || 0), 0);
-
-  const income = data
-    .filter((d) => (d["Income/Expense"] || d.type) === "Inc.")
-    .reduce((sum, d) => sum + Number(d.Amount || d.amount || 0), 0);
-
-  const ctx = document.getElementById("expenseChart").getContext("2d");
-  if (chart) chart.destroy();
-
-  chart = new Chart(ctx, {
-    type: "bar",
-    data: {
-      labels: ["Expense", "Income"],
-      datasets: [
-        {
-          label: "Amount (INR)",
-          data: [expense, income],
-          backgroundColor: ["#ff6384", "#36a2eb"],
-        },
-      ],
-    },
-    options: { responsive: true },
-  });
-}
-// === Load Last Upload Time on Page Load ===
-window.addEventListener("DOMContentLoaded", fetchLastUploadTime);
-
+  
