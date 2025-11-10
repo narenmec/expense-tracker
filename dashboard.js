@@ -338,56 +338,70 @@
     }
 
     // ---------- CHARTS ----------
-    function drawPie(labels, values) {
-      const ctx = document.getElementById('pieChart').getContext('2d');
-      if (pieChart) pieChart.destroy();
-      
-      pieChart = new Chart(ctx, {
-        type: 'pie',
-        data: {
-          labels,
-          datasets: [{
-            data: values,
-            backgroundColor: [
-              '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', 
-              '#9966FF', '#FF9F40', '#66BB6A', '#BA68C8',
-              '#42A5F5', '#7E57C2', '#26A69A', '#D4E157'
-            ],
-            borderWidth: 1
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: {
-            legend: { 
-              position: 'right',
-              labels: { usePointStyle: true }
-            },
-            tooltip: {
-              callbacks: {
-                label: function(context) {
-                  const label = context.label || '';
-                  const value = context.raw || 0;
-                  const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                  const percentage = ((value / total) * 100).toFixed(1);
-                  return `${label}: ${formatCurrency(value)} (${percentage}%)`;
-                }
-              }
-            }
-          },
-          onClick: (e, els) => {
-            if (!els.length) return;
-            const cat = pieChart.data.labels[els[0].index];
-            const catData = allData.filter(r => 
-              r.category === cat && (r.type || '').toLowerCase().includes('exp'));
+	function drawPie(labels, values) {
+  const ctx = document.getElementById('pieChart').getContext('2d');
+  if (pieChart) pieChart.destroy();
+
+  pieChart = new Chart(ctx, {
+    type: 'pie',
+    data: {
+      labels,
+      datasets: [{
+        data: values,
+        backgroundColor: [
+          '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', 
+          '#9966FF', '#FF9F40', '#66BB6A', '#BA68C8',
+          '#42A5F5', '#7E57C2', '#26A69A', '#D4E157'
+        ],
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          position: 'right',
+          labels: { usePointStyle: true },
+          onClick: (e, legendItem, legend) => {
+            // ✅ Custom legend click — disable default hide/show
+            const cat = legendItem.text;
+            const catData = allData.filter(r =>
+              r.category === cat && (r.type || '').toLowerCase().includes('exp')
+            );
             filteredData = catData;
             render(catData);
             document.getElementById('table-container').scrollIntoView({ behavior: 'smooth' });
             showNotification(`Showing expenses for: ${cat}`, 'info');
           }
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              const label = context.label || '';
+              const value = context.raw || 0;
+              const total = context.dataset.data.reduce((a, b) => a + b, 0);
+              const percentage = ((value / total) * 100).toFixed(1);
+              return `${label}: ${formatCurrency(value)} (${percentage}%)`;
+            }
+          }
         }
-      });
+      },
+      // (Optional) also support clicking directly on chart slices
+      onClick: (e, els) => {
+        if (!els.length) return;
+        const cat = pieChart.data.labels[els[0].index];
+        const catData = allData.filter(r =>
+          r.category === cat && (r.type || '').toLowerCase().includes('exp')
+        );
+        filteredData = catData;
+        render(catData);
+        document.getElementById('table-container').scrollIntoView({ behavior: 'smooth' });
+        showNotification(`Showing expenses for: ${cat}`, 'info');
+      }
     }
+  });
+}
+
 
     function drawBarChart(labels, values) {
       const ctx = document.getElementById('pieChart').getContext('2d');
@@ -771,11 +785,11 @@ function showDurgaSummary1(data) {
 
     // Set default date range to last 30 days
     window.addEventListener('DOMContentLoaded', () => {
-      const today = new Date();
-      const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate());
+      //const today = new Date();
+      //const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate());
       
-      toDateEl.value = today.toISOString().split('T')[0];
-      fromDateEl.value = lastMonth.toISOString().split('T')[0];
+      //toDateEl.value = today.toISOString().split('T')[0];
+      //fromDateEl.value = lastMonth.toISOString().split('T')[0];
       
       loadData();
     });
