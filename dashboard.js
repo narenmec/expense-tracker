@@ -8,20 +8,6 @@
        - Trend analysis
     */
 
-    // ---------- Firebase config ----------
-    const firebaseConfig = {
-      apiKey: "AIzaSyAO96bxbGfz7cpwK2egALEZFL1sgzDa6AA",
-      authDomain: "expensetracker-bfe87.firebaseapp.com",
-      databaseURL: "https://expensetracker-bfe87-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "expensetracker-bfe87",
-      storageBucket: "expensetracker-bfe87.firebasestorage.app",
-      messagingSenderId: "784239033436",
-      appId: "1:784239033436:web:5f3c4a53f5d4287d20fa99"
-    };
-
-    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-
     // ---------- DOM Elements ----------
     const fromDateEl = document.getElementById('fromDate');
     const toDateEl = document.getElementById('toDate');
@@ -45,9 +31,9 @@
     const expenseTrend = document.getElementById('expenseTrend');
     const balanceTrend = document.getElementById('balanceTrend');
     const lastUpdate = document.getElementById('lastUpdate');
-    const avgMonthlyExpense = document.getElementById('avgMonthlyExpense');
-    const largestExpense = document.getElementById('largestExpense');
-    const mostUsedCategory = document.getElementById('mostUsedCategory');
+    //const avgMonthlyExpense = document.getElementById('avgMonthlyExpense');
+    //const largestExpense = document.getElementById('largestExpense');
+    //const mostUsedCategory = document.getElementById('mostUsedCategory');
     const notification = document.getElementById('notification');
 
     let allData = [];
@@ -285,7 +271,7 @@
       countVal.textContent = data.length.toLocaleString();
 
       // Additional stats
-      calculateAdditionalStats(data);
+      //calculateAdditionalStats(data);
 
       // Charts
       const expenseData = data.filter(r => (r.type || '').toLowerCase().includes('exp'));
