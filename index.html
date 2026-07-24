@@ -3,93 +3,230 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>💰 Expense Tracker — Home</title>
+  <title>Expense Tracker — Home</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="common.css" />
   <style>
-    :root {
-      --accent: #1976d2;
-      --bg: #f5f7fb;
-      --card: #fff;
-      --text: #333;
-    }
+    body { display: flex; flex-direction: column; }
 
-    html, body {
-      margin: 0;
-      height: 100%;
-      background: var(--bg);
-      font-family: "Inter", Arial, sans-serif;
+    .page-body {
+      flex: 1;
       display: flex;
-      justify-content: center;
       align-items: center;
+      justify-content: center;
+      padding: 32px 24px;
     }
 
     .container {
+      width: 100%;
+      max-width: 480px;
       background: var(--card);
-      padding: 40px 50px;
-      border-radius: 16px;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.1);
-      text-align: center;
-      width: 320px;
-      animation: fadeIn 0.6s ease-in-out;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 48px 40px 36px;
+      box-shadow: 0 4px 24px rgba(15, 23, 42, 0.06);
+      animation: slideUp 0.5s ease both;
     }
+
+    .logo-wrap { display: flex; justify-content: center; margin-bottom: 28px; }
+
+    .logo {
+      width: 72px; height: 72px;
+      background: var(--accent);
+      border-radius: 18px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 34px;
+    }
+
+    .badge {
+      display: inline-block;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 11px; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      padding: 5px 12px; border-radius: 99px; margin-bottom: 14px;
+    }
+
+    .text-center { text-align: center; }
 
     h1 {
-      color: var(--accent);
-      font-size: 22px;
-      margin-bottom: 20px;
+      margin: 0 0 10px;
+      font-size: 28px; font-weight: 800;
+      letter-spacing: -0.03em; line-height: 1.2;
     }
 
-    p {
-      color: var(--text);
-      font-size: 14px;
-      margin-bottom: 30px;
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 15px; line-height: 1.6;
+      margin: 0 0 24px;
     }
+
+    .features {
+      display: flex; gap: 8px;
+      justify-content: center; flex-wrap: wrap;
+      margin-bottom: 28px;
+    }
+
+    .feature {
+      display: flex; align-items: center; gap: 6px;
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: 99px; padding: 6px 14px;
+      font-size: 12px; font-weight: 600; color: var(--text-muted);
+    }
+
+    .feature-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%; background: var(--success);
+    }
+
+    .actions { display: flex; flex-direction: column; gap: 12px; }
 
     button {
-      background: var(--accent);
-      color: white;
-      border: none;
-      padding: 12px 20px;
-      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      width: 100%; padding: 15px 20px;
+      border: none; border-radius: 12px;
+      font-family: inherit; font-size: 15px; font-weight: 600;
       cursor: pointer;
-      font-size: 15px;
-      width: 100%;
-      transition: all 0.2s;
+      transition: background 0.15s, transform 0.15s;
     }
 
-    button:hover {
-      background: #125da3;
-    }
+    button:active { transform: scale(0.98); }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-secondary { background: var(--card); color: var(--text); border: 1.5px solid var(--border); }
+    .btn-secondary:hover { background: var(--bg); border-color: #cbd5e1; }
+    .btn-icon { font-size: 18px; }
 
-    .btn-secondary {
-      background: #444;
-      margin-top: 12px;
+    .divider {
+      display: flex; align-items: center; gap: 12px;
+      margin: 24px 0; color: var(--text-muted); font-size: 12px;
     }
-
-    .btn-secondary:hover {
-      background: #222;
+    .divider::before, .divider::after {
+      content: ""; flex: 1; height: 1px; background: var(--border);
     }
 
     footer {
-      font-size: 12px;
-      color: #777;
-      margin-top: 25px;
+      text-align: center; margin-top: 28px;
+      font-size: 12px; color: var(--text-muted);
     }
+    footer span { color: var(--accent); font-weight: 600; }
 
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
+    @media (max-width: 420px) {
+      .container { padding: 36px 24px 28px; }
+      h1 { font-size: 24px; }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>💰 Expense Tracker</h1>
-    <p>Manage and visualize your financial data easily.</p>
+  <nav class="top-nav">
+    <a href="index.html" class="nav-brand">
+      <span class="nav-brand-icon">💰</span>
+      Expense Tracker
+    </a>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link active">Home</a>
+      <a href="upload.html" class="nav-link">Upload</a>
+      <a href="dashboard.html" class="nav-link">Dashboard</a>
+    </div>
+    <div class="nav-right">
+      <span id="connBadge" class="conn-badge conn-connecting">Connecting…</span>
+    </div>
+  </nav>
 
-    <button onclick="window.location.href='upload.html'">📤 Upload Data</button>
-    <button class="btn-secondary" onclick="window.location.href='dashboard.html'">📊 View Dashboard</button>
+  <div class="page-body">
+    <div class="container">
+      <div class="logo-wrap">
+        <div class="logo" aria-hidden="true">💰</div>
+      </div>
 
-    <footer>© 2025 Expense Tracker</footer>
+      <div class="text-center">
+        <span class="badge">Personal Finance</span>
+        <h1>Expense Tracker</h1>
+        <p class="subtitle">Upload your spending data and get instant visual insights into where your money goes.</p>
+      </div>
+
+      <div class="live-stats" id="liveStats">
+        <div class="live-stat">
+          <div class="live-stat-value" id="homeRecordCount">—</div>
+          <div class="live-stat-label">Records</div>
+        </div>
+        <div class="live-stat">
+          <div class="live-stat-value" id="homeBalance">—</div>
+          <div class="live-stat-label">Balance</div>
+        </div>
+        <div class="live-stat" style="grid-column: span 2;">
+          <div class="live-stat-meta" id="homeLastUpload">Last upload: checking…</div>
+        </div>
+      </div>
+
+      <div class="features">
+        <span class="feature"><span class="feature-dot"></span> Excel Import</span>
+        <span class="feature"><span class="feature-dot"></span> Live Charts</span>
+        <span class="feature"><span class="feature-dot"></span> Cloud Sync</span>
+      </div>
+
+      <div class="actions">
+        <button class="btn-primary" onclick="location.href='upload.html'">
+          <span class="btn-icon">📤</span> Upload Data
+        </button>
+        <button class="btn-secondary" onclick="location.href='dashboard.html'">
+          <span class="btn-icon">📊</span> View Dashboard
+        </button>
+      </div>
+
+      <div class="divider">How it works</div>
+
+      <div class="live-stats">
+        <div class="live-stat"><div class="live-stat-value">📁</div><div class="live-stat-label">Upload</div></div>
+        <div class="live-stat"><div class="live-stat-value">📈</div><div class="live-stat-label">Analyze</div></div>
+        <div class="live-stat"><div class="live-stat-value">☁️</div><div class="live-stat-label">Save</div></div>
+        <div class="live-stat"><div class="live-stat-value">📊</div><div class="live-stat-label">Report</div></div>
+      </div>
+
+      <footer>© 2025 <span>Expense Tracker</span></footer>
+    </div>
   </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="app-utils.js"></script>
+  <script>
+    initConnectionBadge("connBadge");
+
+    function loadHomeStats() {
+      if (!db) {
+        document.getElementById("homeRecordCount").textContent = "—";
+        document.getElementById("homeBalance").textContent = "—";
+        document.getElementById("homeLastUpload").textContent = "Server unavailable — check internet connection";
+        return;
+      }
+
+      db.ref("expenses").once("value").then(snap => {
+        const val = snap.val();
+        const count = countExpenseRecords(val);
+        document.getElementById("homeRecordCount").textContent = count.toLocaleString();
+
+        const income = sumFromRecords(val, t => t.includes("inc") || t === "income");
+        const expense = sumFromRecords(val, t => t.includes("exp"));
+        document.getElementById("homeBalance").textContent = formatINR(income - expense);
+      }).catch(() => {
+        document.getElementById("homeRecordCount").textContent = "—";
+        document.getElementById("homeBalance").textContent = "—";
+      });
+
+      db.ref("lastUploadTime").once("value").then(snap => {
+        const t = snap.val();
+        document.getElementById("homeLastUpload").textContent =
+          t ? "Last upload: " + t : "No uploads yet — start by uploading an Excel file";
+      }).catch(() => {
+        document.getElementById("homeLastUpload").textContent = "Could not load upload time";
+      });
+    }
+
+    loadHomeStats();
+  </script>
 </body>
 </html>

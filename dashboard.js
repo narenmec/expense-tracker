@@ -35,6 +35,7 @@
     //const largestExpense = document.getElementById('largestExpense');
     //const mostUsedCategory = document.getElementById('mostUsedCategory');
     const notification = document.getElementById('notification');
+    const loadingOverlay = document.getElementById('loadingOverlay');
 
     let allData = [];
     let filteredData = [];
@@ -110,12 +111,17 @@
     }
 
     function formatCurrency(amount) {
-      return new Intl.NumberFormat('en-IN', {
-        style: 'currency',
-        currency: 'INR',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0
-      }).format(amount);
+      return formatINR(amount);
+    }
+
+    function parseExpensesFromSnapshot(val) {
+      if (!val) return [];
+      const rows = Array.isArray(val) ? val.map((v, i) => [String(i), v]) : Object.entries(val);
+      return rows.map(([k, v]) => normalizeRow(v, k));
+    }
+
+    function hideLoading() {
+      if (loadingOverlay) loadingOverlay.classList.add('hidden');
     }
 
     function calculateTrend(current, previous) {
@@ -142,45 +148,54 @@
 
     // ---------- LOAD DATA ----------
     function loadData() {
+      if (!db) {
+        hideLoading();
+        showNotification('Cannot connect to server. Check your internet connection.', 'error');
+        return;
+      }
+
       showNotification('Loading data...', 'info');
       db.ref('expenses').once('value')
         .then(snapshot => {
           const val = snapshot.val();
           if (!val) {
             allData = [];
-            showNotification('No data found in database', 'error');
+            showNotification('No data found — upload an Excel file first', 'error');
           } else {
-            allData = Object.entries(val).map(([k, v]) => normalizeRow(v, k));
+            allData = parseExpensesFromSnapshot(val);
             allData.sort((a, b) => (b.dateObj || 0) - (a.dateObj || 0));
             showNotification(`Loaded ${allData.length} records`, 'success');
           }
           populateFilterOptions(allData);
           applyAndRender();
           updateLastUpdateTime();
+          updateSalarySummary(filteredData);
         })
         .catch(error => {
           console.error('Error loading data:', error);
           showNotification('Error loading data: ' + error.message, 'error');
-        });
+        })
+        .finally(hideLoading);
     }
 
-    // Real-time updates
-    db.ref('expenses').on('value', snapshot => {
-      const val = snapshot.val();
-      if (!val) return;
-      
-      const newData = Object.entries(val).map(([k, v]) => normalizeRow(v, k));
-      newData.sort((a, b) => (b.dateObj || 0) - (a.dateObj || 0));
-      
-      // Only update if data actually changed
-      if (JSON.stringify(newData) !== JSON.stringify(allData)) {
-        allData = newData;
-        populateFilterOptions(allData);
-        applyAndRender();
-        updateLastUpdateTime();
-        showNotification('Data updated', 'info', 2000);
-      }
-    });
+    function startRealtimeSync() {
+      if (!db) return;
+      db.ref('expenses').on('value', snapshot => {
+        const val = snapshot.val();
+        if (!val) return;
+
+        const newData = parseExpensesFromSnapshot(val);
+        newData.sort((a, b) => (b.dateObj || 0) - (a.dateObj || 0));
+
+        if (JSON.stringify(newData) !== JSON.stringify(allData)) {
+          allData = newData;
+          populateFilterOptions(allData);
+          applyAndRender();
+          updateLastUpdateTime();
+          showNotification('Data updated', 'info', 2000);
+        }
+      });
+    }
 
     function updateLastUpdateTime() {
       lastUpdate.textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
@@ -233,6 +248,7 @@
       });
 
       render(filteredData);
+	  
       
       // Update trends
       const currentIncome = filteredData
@@ -304,6 +320,7 @@
       renderTable(data);
       renderCategorySummary(data);
 	  showDurgaSummary(data);
+	  updateSalarySummary(filteredData);
 
     }
 
@@ -702,6 +719,178 @@ function showDurgaSummary1(data) {
   // 🔹 Optional: color highlight for positive/negative difference
   const diffEl = document.getElementById("durgaBalance");
   diffEl.style.color = diff >= 0 ? "#10B981" : "#EF4444";
+}
+
+// ===========================
+// 🔹 SALARY SUMMARY (filtered)
+// ===========================
+function updateSalarySummary(filteredData) {
+  if (!filteredData || !filteredData.length) {
+    console.warn("No data to summarize — salary summary cleared.");
+    document.getElementById("salarySummaryValue").textContent = "₹ 0";
+    document.getElementById("salarySummaryTrend").innerHTML = `
+      Salary: ₹0<br>
+      Expense (excl. debt): ₹0<br>
+      Balance: ₹0<br>
+      <b>No records in selected date range.</b>`;
+    return;
+  }
+
+  // --- Helper utilities ---
+  const get = (d, key) => (d[key] || "").toString().toLowerCase().trim();
+  const getNum = (val) => Number(val) || 0;
+
+  // --- Apply date filter if your global filter fields exist ---
+  const fromDate = document.getElementById("fromDate")?.value;
+  const toDate = document.getElementById("toDate")?.value;
+
+  const filteredByDate = filteredData.filter(d => {
+    if (!fromDate && !toDate) return true;
+    const dateStr = d.dateRaw || d.Date || d.date || "";
+    if (!dateStr) return false;
+
+    // Normalize to YYYY-MM-DD for comparison
+    const [day, month, year] = dateStr.split(/[-/]/).map(Number);
+    const recordDate = new Date(year, month - 1, day);
+    const from = fromDate ? new Date(fromDate) : new Date("2000-01-01");
+    const to = toDate ? new Date(toDate) : new Date("2999-12-31");
+    return recordDate >= from && recordDate <= to;
+  });
+
+  // --- Step 1: Total Salary (Income from 'salary') ---
+  const totalSalary = filteredByDate
+    .filter(d => {
+      const type = get(d, "type");
+      const cat = get(d, "category");
+      const sub = get(d, "subcategory");
+      return (
+        type.includes("income") &&
+        (cat.includes("salary") || sub.includes("salary"))
+      );
+    })
+    .reduce((sum, d) => sum + getNum(d.amount), 0);
+
+  // --- Step 2: Total Expense excluding debt/settlement ---
+  const totalExpense = filteredByDate
+    .filter(d => {
+      const type = get(d, "type");
+      const cat = get(d, "category");
+      const sub = get(d, "subcategory");
+
+      const isExpense =
+        type.includes("exp") || type.includes("debit") || type.includes("payment");
+      if (!isExpense) return false;
+
+      const excludeWords = ["debt", "settlement", "loan", "repay"];
+      return !excludeWords.some(w => cat.includes(w) || sub.includes(w));
+    })
+    .reduce((sum, d) => sum + getNum(d.amount), 0);
+
+  // --- Step 3: Compute results ---
+  const balance = totalSalary - totalExpense;
+  const usedPct = totalSalary > 0 ? ((totalExpense / totalSalary) * 100).toFixed(1) : 0;
+
+  // --- Step 4: Update UI ---
+  const salaryValEl = document.getElementById("salarySummaryValue");
+  const salaryTrendEl = document.getElementById("salarySummaryTrend");
+  if (!salaryValEl || !salaryTrendEl) return;
+
+  salaryValEl.textContent = `₹ ${balance.toLocaleString()}`;
+
+  let trendMsg = "";
+  if (usedPct < 50)
+    trendMsg = `🟢 You used ${usedPct}% of your salary — great saving!`;
+  else if (usedPct < 80)
+    trendMsg = `🟡 You've spent ${usedPct}% of your salary. Balanced month.`;
+  else
+    trendMsg = `🔴 ${usedPct}% of salary spent — review optional spends.`;
+
+  salaryTrendEl.innerHTML = `
+    Salary: ₹${totalSalary.toLocaleString()}<br>
+    Expense (excl. debt): ₹${totalExpense.toLocaleString()}<br>
+    Balance: ₹${balance.toLocaleString()}<br>
+    <b>${trendMsg}</b>
+  `;
+
+  console.log({
+    totalSalary,
+    totalExpense,
+    balance,
+    usedPct,
+    range: { fromDate, toDate },
+    filteredRecords: filteredByDate.length,
+  });
+}
+
+
+function updateSalarySummary1(data) {
+  if (!data || !data.length) return;
+
+  // --- Helper to safely normalize fields ---
+  const get = (d, key) => (d[key] || "").toString().toLowerCase().trim();	
+  const getNum = (val) => Number(val) || 0;
+
+  // --- Step 1: Total Salary (Income from 'salary' category or note) ---
+  const totalSalary = data
+    .filter(d => {
+      const type = get(d, "type");
+      const cat = get(d, "category");
+      const sub = get(d, "subcategory");
+      return (
+        type.includes("income") &&
+        (cat.includes("salary") || sub.includes("salary"))
+      );
+    })
+    .reduce((sum, d) => sum + getNum(d.amount), 0);
+
+  // --- Step 2: Total Expense excluding debt/settlement ---
+  const totalExpense = data
+    .filter(d => {
+      const type = get(d, "type");
+      const cat = get(d, "category");
+      const sub = get(d, "subcategory");
+
+      // Match all expense types
+      const isExpense = type.includes("exp") || type.includes("debit") || type.includes("payment");
+      if (!isExpense) return false;
+
+      // Exclude debt-related entries
+      const excludeWords = ["debt", "settlement", "loan", "repay"];
+      const isExcluded = excludeWords.some(w =>
+        cat.includes(w) || sub.includes(w)
+      );
+      return !isExcluded;
+    })
+    .reduce((sum, d) => sum + getNum(d.amount), 0);
+
+  // --- Step 3: Derived values ---
+  const balance = totalSalary - totalExpense;
+  const usedPct = totalSalary > 0 ? ((totalExpense / totalSalary) * 100).toFixed(1) : 0;
+
+  // --- Step 4: Update UI ---
+  const salaryValEl = document.getElementById("salarySummaryValue");
+  const salaryTrendEl = document.getElementById("salarySummaryTrend");
+
+  if (!salaryValEl || !salaryTrendEl) return console.warn("Salary summary elements not found in DOM");
+
+  salaryValEl.textContent = `₹ ${balance.toLocaleString()}`;
+
+  let trendMsg = "";
+  if (usedPct < 50)
+    trendMsg = `🟢 You used ${usedPct}% of your salary — great saving!`;
+  else if (usedPct < 80)
+    trendMsg = `🟡 You've spent ${usedPct}% of your salary. Balanced month.`;
+  else
+    trendMsg = `🔴 ${usedPct}% of salary spent — review optional spends.`;
+
+  salaryTrendEl.innerHTML = `
+    Salary: ₹${totalSalary.toLocaleString()}<br>
+    Expense (excl. debt): ₹${totalExpense.toLocaleString()}<br>
+    Balance: ₹${balance.toLocaleString()}<br>
+    <b>${trendMsg}</b>
+  `;
+
+  console.log({ totalSalary, totalExpense, balance, usedPct });
 }
 
 

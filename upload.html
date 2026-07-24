@@ -3,155 +3,237 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>📤 Upload Data — Expense Tracker</title>
-
-  <!-- ✅ SheetJS for Excel parsing -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-  
-
-  <!-- ✅ Firebase (compat SDKs) -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
-
-  	<!-- ✅ Centralized config file -->
-	<script src="firebase-config.js"></script>
-	
+  <title>Upload Data — Expense Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="common.css" />
   <style>
-    :root {
-      --accent: #1976d2;
-      --bg: #f5f7fb;
-      --card: #fff;
-      --text: #333;
-    }
+    body { display: flex; flex-direction: column; }
 
-    html, body {
-      margin: 0;
-      height: 100%;
-      background: var(--bg);
-      font-family: "Inter", Arial, sans-serif;
+    .page-body {
+      flex: 1;
       display: flex;
       justify-content: center;
-      align-items: flex-start;
-      padding-top: 40px;
+      padding: 32px 24px;
     }
 
     .container {
+      width: 100%; max-width: 640px;
       background: var(--card);
-      padding: 30px 40px;
-      border-radius: 16px;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.1);
-      width: 90%;
-      max-width: 700px;
-      text-align: center;
-      animation: fadeIn 0.6s ease-in-out;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 40px;
+      box-shadow: 0 4px 24px rgba(15, 23, 42, 0.06);
+      animation: slideUp 0.5s ease both;
+    }
+
+    .page-header { text-align: center; margin-bottom: 32px; }
+    .logo-wrap { display: flex; justify-content: center; margin-bottom: 20px; }
+
+    .logo {
+      width: 56px; height: 56px;
+      background: var(--accent); border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 26px;
+    }
+
+    .badge {
+      display: inline-block;
+      background: var(--accent-soft); color: var(--accent);
+      font-size: 11px; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      padding: 5px 12px; border-radius: 99px; margin-bottom: 12px;
     }
 
     h1 {
-      color: var(--accent);
-      font-size: 22px;
-      margin-bottom: 10px;
+      margin: 0 0 8px;
+      font-size: 24px; font-weight: 800;
+      letter-spacing: -0.03em;
     }
 
-    p {
-      color: var(--text);
-      font-size: 14px;
-      margin-bottom: 25px;
+    .subtitle { color: var(--text-muted); font-size: 14px; line-height: 1.6; margin: 0; }
+
+    .upload-zone {
+      border: 2px dashed var(--border);
+      border-radius: 14px;
+      padding: 28px 20px;
+      text-align: center;
+      background: var(--bg);
+      transition: border-color 0.15s, background 0.15s;
+      cursor: pointer;
+      margin-bottom: 20px;
     }
 
-    input[type="file"] {
-      padding: 8px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      background: white;
-      width: 100%;
+    .upload-zone:hover, .upload-zone.dragover {
+      border-color: var(--accent);
+      background: var(--accent-soft);
     }
+
+    .upload-zone-icon { font-size: 32px; margin-bottom: 8px; }
+    .upload-zone-label { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+    .upload-zone-hint { font-size: 12px; color: var(--text-muted); }
+    input[type="file"] { display: none; }
+
+    .file-name {
+      display: inline-block; margin-top: 10px;
+      font-size: 13px; font-weight: 600; color: var(--accent);
+    }
+
+    .actions { display: flex; flex-direction: column; gap: 10px; }
 
     button {
-      background: var(--accent);
-      color: white;
-      border: none;
-      padding: 10px 16px;
-      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      width: 100%; padding: 14px 20px;
+      border: none; border-radius: 12px;
+      font-family: inherit; font-size: 15px; font-weight: 600;
       cursor: pointer;
-      font-size: 15px;
-      margin-top: 15px;
-      transition: all 0.2s;
-      width: 100%;
+      transition: background 0.15s, transform 0.15s;
     }
 
-    button:hover {
-      background: #125da3;
-    }
+    button:active { transform: scale(0.98); }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-outline { background: var(--card); color: var(--text); border: 1.5px solid var(--border); }
+    .btn-outline:hover { background: var(--bg); }
+    .btn-secondary { background: var(--bg); color: var(--text-muted); border: 1.5px solid var(--border); }
+    .btn-secondary:hover { background: var(--border); color: var(--text); }
 
-    .btn-secondary {
-      background: #444;
-      margin-top: 10px;
-    }
+    #status { margin-top: 20px; }
 
-    .btn-secondary:hover {
-      background: #222;
-    }
-
-    #status {
-      margin-top: 20px;
-      font-size: 14px;
-      color: #555;
-    }
-
-    #previewTable {
-      margin-top: 20px;
-      border-collapse: collapse;
-      width: 100%;
-      font-size: 13px;
-    }
-
-    #previewTable th, #previewTable td {
-      border: 1px solid #ddd;
-      padding: 6px;
-      text-align: center;
-    }
-
-    #previewTable th {
-      background: #f0f0f0;
-      position: sticky;
-      top: 0;
-    }
+    .preview-section { margin-top: 28px; }
+    .preview-section h3 { font-size: 14px; font-weight: 700; margin: 0 0 12px; text-align: left; }
 
     .preview-container {
-      max-height: 250px;
-      overflow-y: auto;
-      margin-top: 10px;
-      border: 1px solid #eee;
-      border-radius: 8px;
+      max-height: 260px; overflow: auto;
+      border: 1px solid var(--border); border-radius: 12px;
     }
 
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
+    #previewTable { width: 100%; border-collapse: collapse; font-size: 12px; }
+    #previewTable th, #previewTable td {
+      padding: 10px 12px; text-align: left;
+      border-bottom: 1px solid var(--border);
     }
+    #previewTable th {
+      background: var(--bg); font-weight: 700;
+      color: var(--text-muted); font-size: 11px;
+      text-transform: uppercase; letter-spacing: 0.04em;
+      position: sticky; top: 0;
+    }
+    #previewTable tr:last-child td { border-bottom: none; }
+    #previewTable tr:hover td { background: var(--accent-soft); }
+
+    .format-hint {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 20px;
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    .format-hint strong { color: var(--text); }
+
+    footer { text-align: center; margin-top: 28px; font-size: 12px; color: var(--text-muted); }
+    footer span { color: var(--accent); font-weight: 600; }
+
+    @media (max-width: 480px) { .container { padding: 28px 20px; } h1 { font-size: 22px; } }
   </style>
 </head>
-
 <body>
-  <div class="container">
-    <h1>📤 Upload Excel to Firebase</h1>
-    <p>Select an Excel file (.xlsx or .xls) containing your expense records.</p>
+  <nav class="top-nav">
+    <a href="index.html" class="nav-brand">
+      <span class="nav-brand-icon">💰</span>
+      Expense Tracker
+    </a>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link">Home</a>
+      <a href="upload.html" class="nav-link active">Upload</a>
+      <a href="dashboard.html" class="nav-link">Dashboard</a>
+    </div>
+    <div class="nav-right">
+      <span id="connBadge" class="conn-badge conn-connecting">Connecting…</span>
+    </div>
+  </nav>
 
-    <input type="file" id="excelFile" accept=".xlsx, .xls" />
-    <button id="previewBtn">🔍 Preview Data</button>
-    <button id="uploadBtn">🚀 Upload to Firebase</button>
-    <button class="btn-secondary" onclick="window.location.href='index.html'">🏠 Back to Home</button>
+  <div class="page-body">
+    <div class="container">
+      <div class="page-header">
+        <div class="logo-wrap">
+          <div class="logo" aria-hidden="true">📤</div>
+        </div>
+        <span class="badge">Import Data</span>
+        <h1>Upload Excel to Firebase</h1>
+        <p class="subtitle">Select an Excel file (.xlsx or .xls) containing your expense records.</p>
+      </div>
 
-    <div id="status">No file selected.</div>
+      <div class="format-hint">
+        <strong>Expected columns:</strong> Date, Account, Category, Subcategory, Amount, Income_Expense, Note
+      </div>
 
-    <div class="preview-container" id="previewContainer" style="display:none;">
-      <h3>📋 Preview (first 10 rows)</h3>
-      <table id="previewTable"></table>
+      <label class="upload-zone" id="dropZone" for="excelFile">
+        <div class="upload-zone-icon">📁</div>
+        <div class="upload-zone-label">Click to browse or drag &amp; drop</div>
+        <div class="upload-zone-hint">Supports .xlsx and .xls files</div>
+        <div class="file-name" id="fileName"></div>
+      </label>
+      <input type="file" id="excelFile" accept=".xlsx, .xls" />
+
+      <div class="actions">
+        <button class="btn-outline" id="previewBtn">🔍 Preview Data</button>
+        <button class="btn-primary" id="uploadBtn">🚀 Upload to Firebase</button>
+        <button class="btn-secondary" onclick="location.href='index.html'">🏠 Back to Home</button>
+      </div>
+
+      <div id="status" class="status-box">No file selected.</div>
+
+      <div class="preview-section" id="previewContainer" style="display:none;">
+        <h3>📋 Preview (first 10 rows)</h3>
+        <div class="preview-container">
+          <table id="previewTable"></table>
+        </div>
+      </div>
+
+      <footer>© 2025 <span>Expense Tracker</span></footer>
     </div>
   </div>
- 
-  <!-- Upload logic -->
+
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="app-utils.js"></script>
   <script src="script.js"></script>
-  
+  <script>
+    initConnectionBadge("connBadge");
+
+    const fileInput = document.getElementById("excelFile");
+    const dropZone = document.getElementById("dropZone");
+    const fileNameEl = document.getElementById("fileName");
+
+    fileInput.addEventListener("change", () => {
+      const file = fileInput.files[0];
+      fileNameEl.textContent = file ? file.name : "";
+      setStatusBox(document.getElementById("status"),
+        file ? "Selected: " + file.name : "No file selected.");
+    });
+
+    ["dragenter", "dragover"].forEach(evt =>
+      dropZone.addEventListener(evt, e => { e.preventDefault(); dropZone.classList.add("dragover"); })
+    );
+    ["dragleave", "drop"].forEach(evt =>
+      dropZone.addEventListener(evt, e => { e.preventDefault(); dropZone.classList.remove("dragover"); })
+    );
+    dropZone.addEventListener("drop", e => {
+      const file = e.dataTransfer.files[0];
+      if (file) {
+        fileInput.files = e.dataTransfer.files;
+        fileNameEl.textContent = file.name;
+        setStatusBox(document.getElementById("status"), "Selected: " + file.name);
+      }
+    });
+  </script>
 </body>
 </html>

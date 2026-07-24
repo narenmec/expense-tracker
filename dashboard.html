@@ -3,214 +3,382 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Expense Tracker — Dashboard</title>
+  <title>Dashboard — Expense Tracker</title>
 
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-  <!-- SheetJS (for Excel export) -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-
-  <!-- Firebase compat SDK -->
-  <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-database-compat.js"></script>
-
-	<!-- ✅ Centralized config file -->
-	<script src="firebase-config.js"></script>
-
-  <!-- Font Awesome for icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="common.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
   <style>
     :root {
-      --accent: #1976d2;
-      --accent-light: #e3f2fd;
-      --card: #fff;
-      --bg: #f8fafc;
-      --muted: #6b7280;
-      --success: #10b981;
-      --warning: #f59e0b;
-      --danger: #ef4444;
+      --accent: #2563eb;
+      --accent-hover: #1d4ed8;
+      --accent-soft: #eff6ff;
+      --bg: #f1f5f9;
+      --card: #ffffff;
+      --text: #1e293b;
+      --text-muted: #64748b;
       --border: #e2e8f0;
-      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --success: #10b981;
+      --success-soft: #ecfdf5;
+      --warning: #f59e0b;
+      --warning-soft: #fffbeb;
+      --danger: #ef4444;
+      --danger-soft: #fef2f2;
     }
 
-    * {
-      box-sizing: border-box;
-    }
+    *, *::before, *::after { box-sizing: border-box; }
 
     html, body {
-      height: 100%;
       margin: 0;
+      min-height: 100%;
+      font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+      color: var(--text);
       background: var(--bg);
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      color: #1e293b;
       line-height: 1.5;
     }
 
-    .wrap { 
-      max-width: 1200px; 
-      margin: 20px auto; 
-      padding: 16px; 
+    .wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 32px 24px 48px;
+      animation: slideUp 0.5s ease both;
     }
 
-    header { 
-      display: flex; 
-      gap: 16px; 
-      align-items: center; 
-      margin-bottom: 20px;
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Page header ── */
+    .page-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 20px;
       flex-wrap: wrap;
+      margin-bottom: 24px;
     }
 
-    header h1 { 
-      margin: 0; 
-      font-size: 24px; 
-      font-weight: 700;
+    .page-header-left {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 16px;
     }
 
-    .top-cards { 
-      display: grid; 
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 16px; 
-      margin: 16px 0; 
-    }
-
-    .card {
-      background: var(--card);
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: var(--shadow);
-      transition: transform 0.2s, box-shadow 0.2s;
-      border-left: 4px solid var(--accent);
-    }
-
-    .card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-    }
-
-    .card.income { border-left-color: var(--success); }
-    .card.expense { border-left-color: var(--danger); }
-    .card.balance { border-left-color: var(--accent); }
-    .card.count { border-left-color: var(--warning); }
-
-    .card .title { 
-      font-size: 14px; 
-      color: var(--muted);
-      font-weight: 500;
-      margin-bottom: 8px;
+    .logo {
+      width: 52px;
+      height: 52px;
+      background: var(--accent);
+      border-radius: 14px;
       display: flex;
       align-items: center;
-      gap: 6px;
+      justify-content: center;
+      font-size: 24px;
+      flex-shrink: 0;
     }
 
-    .card .value { 
-      font-size: 24px; 
+    .page-title-wrap h1 {
+      margin: 0 0 4px;
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+
+    .badge {
+      display: inline-block;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 10px;
       font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 99px;
+      margin-bottom: 6px;
+    }
+
+    .page-subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
       margin: 0;
     }
 
-    .card .trend {
-      font-size: 12px;
-      margin-top: 6px;
+    .header-actions {
       display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .trend.up { color: var(--success); }
-    .trend.down { color: var(--danger); }
-
-    .controls {
-      display: flex;
-      gap: 12px;
+      gap: 8px;
       flex-wrap: wrap;
       align-items: center;
-      margin-bottom: 16px;
+    }
+
+    .searchBox {
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1.5px solid var(--border);
       background: var(--card);
-      padding: 16px;
-      border-radius: 12px;
-      box-shadow: var(--shadow);
+      font-family: inherit;
+      font-size: 13px;
+      min-width: 220px;
+      transition: border-color 0.15s;
+    }
+
+    .searchBox:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 10px 16px;
+      border: none;
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.15s;
+      white-space: nowrap;
+    }
+
+    .btn:active { transform: scale(0.98); }
+
+    .btn { background: var(--accent); color: #fff; }
+    .btn:hover { background: var(--accent-hover); }
+
+    .btn.secondary {
+      background: var(--card);
+      color: var(--text);
+      border: 1.5px solid var(--border);
+    }
+    .btn.secondary:hover { background: var(--bg); }
+
+    .btn.success { background: var(--success); color: #fff; }
+    .btn.success:hover { background: #059669; }
+
+    .btn.danger { background: var(--danger); color: #fff; }
+
+    .btn-home {
+      background: var(--bg);
+      color: var(--text-muted);
+      border: 1.5px solid var(--border);
+      text-decoration: none;
+    }
+    .btn-home:hover { background: var(--border); color: var(--text); }
+
+    /* ── Filters ── */
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: flex-end;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 12px rgba(15, 23, 42, 0.04);
     }
 
     .filter-group {
       display: flex;
       flex-direction: column;
       gap: 6px;
+      min-width: 150px;
     }
 
     .filter-group label {
-      font-size: 12px;
-      font-weight: 500;
-      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
     }
 
     .input, select {
       padding: 10px 12px;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      background: white;
-      font-size: 14px;
-      transition: border-color 0.2s, box-shadow 0.2s;
+      border-radius: 10px;
+      border: 1.5px solid var(--border);
+      background: var(--card);
+      font-family: inherit;
+      font-size: 13px;
+      color: var(--text);
+      transition: border-color 0.15s;
+      height: 40px;
     }
 
     .input:focus, select:focus {
       outline: none;
       border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
     }
 
-    .btn {
-      background: var(--accent);
-      color: #fff;
-      border: none;
-      padding: 10px 16px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 14px;
-      font-weight: 500;
+    .filter-actions {
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+    }
+
+    /* ── Summary cards ── */
+    .top-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 2px 12px rgba(15, 23, 42, 0.04);
+      transition: transform 0.15s;
+    }
+
+    .card:hover { transform: translateY(-2px); }
+
+    .card.income  { border-top: 3px solid var(--success); }
+    .card.expense  { border-top: 3px solid var(--danger); }
+    .card.balance  { border-top: 3px solid var(--accent); }
+    .card.count    { border-top: 3px solid var(--warning); }
+
+    .card .title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 8px;
       display: flex;
       align-items: center;
       gap: 6px;
-      transition: background 0.2s, transform 0.1s;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
     }
 
-    .btn:hover {
-      background: #1565c0;
+    .card .value {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin: 0;
     }
 
-    .btn:active {
-      transform: scale(0.98);
+    .card.income  .value { color: var(--success); }
+    .card.expense  .value { color: var(--danger); }
+    .card.balance  .value { color: var(--accent); }
+
+    .trend {
+      font-size: 12px;
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      color: var(--text-muted);
     }
 
-    .btn.secondary { 
-      background: #64748b; 
-    }
-    .btn.secondary:hover { 
-      background: #475569; 
+    .trend.up   { color: var(--success); }
+    .trend.down { color: var(--danger); }
+
+    .last-update {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 8px;
     }
 
-    .btn.success { 
-      background: var(--success); 
-    }
-    .btn.success:hover { 
-      background: #0da271; 
-    }
-
-    .btn.danger { 
-      background: var(--danger); 
-    }
-    .btn.danger:hover { 
-      background: #dc2626; 
+    /* ── Salary summary ── */
+    .salary-summary {
+      background: var(--accent-soft);
+      border: 1px solid #bfdbfe;
+      border-radius: 16px;
+      padding: 20px 24px;
+      margin-bottom: 14px;
     }
 
+    .salary-summary .stat-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 10px;
+    }
+
+    .value-trend {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .value-trend .value {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+
+    .value-trend .trend {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.7;
+      text-align: right;
+    }
+
+    /* ── Durga summary ── */
+    .summary-container {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 14px;
+      box-shadow: 0 2px 12px rgba(15, 23, 42, 0.04);
+    }
+
+    .summary-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+      margin: 0 0 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .summary-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 14px;
+    }
+
+    .summary-cards .card {
+      background: var(--bg);
+      border-top: none;
+      border-left: 3px solid var(--border);
+    }
+
+    .summary-cards .card.income  { border-left-color: var(--success); }
+    .summary-cards .card.expense { border-left-color: var(--danger); }
+    .summary-cards .card.balance { border-left-color: var(--accent); }
+
+    .summary-cards .title {
+      text-transform: none;
+      letter-spacing: 0;
+      font-size: 13px;
+    }
+
+    .summary-cards .value {
+      font-size: 22px;
+    }
+
+    /* ── Panels & grid ── */
     .grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 16px;
+      gap: 14px;
+      margin-top: 14px;
     }
 
     @media (max-width: 900px) {
@@ -219,463 +387,260 @@
 
     .panel {
       background: var(--card);
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 2px 12px rgba(15, 23, 42, 0.04);
     }
 
     .panel h3 {
-      margin: 0 0 16px 0;
-      font-size: 18px;
-      font-weight: 600;
+      margin: 0 0 16px;
+      font-size: 15px;
+      font-weight: 700;
       display: flex;
       align-items: center;
       gap: 8px;
+      color: var(--text);
     }
 
-    canvas { 
-      max-width: 100%; 
-    }
-
-    #table-container { 
-      margin-top: 12px; 
-      overflow: auto; 
-      max-height: 300px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-    }
-
-    table { 
-      width: 100%; 
-      border-collapse: collapse; 
-      font-size: 14px;
-    }
-
-    th, td { 
-      padding: 12px; 
-      border-bottom: 1px solid var(--border); 
-      text-align: left; 
-    }
-
-    th { 
-      background: #f8fafc; 
-      position: sticky; 
-      top: 0; 
-      font-weight: 600;
-      color: #475569;
-    }
-
-    tr:hover {
-      background: #f8fafc;
-    }
-
-    .small { 
-      font-size: 12px; 
-      color: var(--muted); 
-    }
-
-    .actions { 
-      margin-left: auto; 
-      display: flex; 
-      gap: 10px; 
+    .panel-actions {
+      margin-top: 16px;
+      display: flex;
+      gap: 8px;
       flex-wrap: wrap;
     }
 
-    .searchBox {
-      padding: 10px 12px;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      min-width: 200px;
-      font-size: 14px;
-    }
+    canvas { max-width: 100%; }
 
-    /* === Summary Section === */
-    .summary-card {
-      background: var(--card);
-      border-radius: 12px;
-      padding: 20px;
-      margin-top: 20px;
-      box-shadow: var(--shadow);
-      grid-column: 1 / -1;
-    }
-
+    /* ── Category summary ── */
     #categorySummary {
-      margin-top: 1rem;
-      background: #f8fafc;
-      border-radius: 10px;
-      padding: 16px;
-      max-height: 400px;
+      margin-top: 4px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      max-height: 360px;
       overflow-y: auto;
-      box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
     }
 
     .category-item {
-      background: white;
-      margin: 8px 0;
-      padding: 12px 16px;
-      border-radius: 8px;
+      background: var(--card);
+      margin: 6px 0;
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
       cursor: pointer;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-      transition: background 0.2s;
+      transition: background 0.15s;
     }
 
-    .category-item:hover {
-      background: #f1f5f9;
-    }
+    .category-item:hover { background: var(--accent-soft); }
 
     .cat-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-weight: 500;
+      font-weight: 600;
+      font-size: 13px;
     }
 
     .subcategory-list {
-      margin-left: 20px;
-      padding: 8px 0;
+      margin-left: 16px;
+      padding: 6px 0;
       display: none;
     }
 
     .subcategory-item {
-      font-size: 13px;
-      color: #475569;
-      padding: 6px 0;
+      font-size: 12px;
+      color: var(--text-muted);
+      padding: 5px 0;
       display: flex;
       justify-content: space-between;
-      border-bottom: 1px dashed #e2e8f0;
+      border-bottom: 1px dashed var(--border);
     }
 
-    .subcategory-item:last-child {
-      border-bottom: none;
-    }
+    .subcategory-item:last-child { border-bottom: none; }
 
     .progress-bar {
-      height: 6px;
-      background: #e2e8f0;
-      border-radius: 3px;
-      margin-top: 6px;
+      height: 5px;
+      background: var(--border);
+      border-radius: 99px;
+      margin-top: 8px;
       overflow: hidden;
     }
 
     .progress-fill {
       height: 100%;
       background: var(--accent);
-      border-radius: 3px;
-      transition: width 0.5s ease;
+      border-radius: 99px;
+      transition: width 0.4s ease;
     }
 
-    .stats-row {
-      display: flex;
-      gap: 16px;
-      margin-bottom: 16px;
+    /* ── Table ── */
+    #table-container {
+      overflow: auto;
+      max-height: 380px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
     }
 
-    .stat-item {
-      flex: 1;
-      background: white;
-      padding: 16px;
-      border-radius: 8px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-      text-align: center;
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
     }
 
-    .stat-value {
-      font-size: 20px;
+    th, td {
+      padding: 11px 14px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+    }
+
+    th {
+      background: var(--bg);
+      position: sticky;
+      top: 0;
       font-weight: 700;
-      margin: 8px 0;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
     }
 
-    .stat-label {
-      font-size: 12px;
-      color: var(--muted);
-    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--accent-soft); }
 
-    .loading {
+    .small { font-size: 12px; color: var(--text-muted); }
+
+    /* ── Badges ── */
+    .type-badge {
       display: inline-block;
-      width: 20px;
-      height: 20px;
-      border: 3px solid rgba(255,255,255,.3);
-      border-radius: 50%;
-      border-top-color: #fff;
-      animation: spin 1s ease-in-out infinite;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
     }
 
-    @keyframes spin {
-      to { transform: rotate(360deg); }
+    .type-income   { background: var(--success-soft); color: #065f46; }
+    .type-expense  { background: var(--danger-soft);  color: #991b1b; }
+    .type-transfer { background: var(--accent-soft); color: #3730a3; }
+
+    .amount-positive { color: var(--success); font-weight: 700; }
+    .amount-negative { color: var(--danger);  font-weight: 700; }
+
+    /* ── Empty state ── */
+    .empty-state {
+      text-align: center;
+      padding: 48px 20px;
+      color: var(--text-muted);
     }
 
+    .empty-state i {
+      font-size: 40px;
+      margin-bottom: 12px;
+      opacity: 0.4;
+      display: block;
+    }
+
+    /* ── Notification ── */
     .notification {
       position: fixed;
       top: 20px;
       right: 20px;
       padding: 12px 20px;
-      border-radius: 8px;
+      border-radius: 12px;
       color: white;
-      font-weight: 500;
-      box-shadow: var(--shadow);
+      font-weight: 600;
+      font-size: 13px;
+      box-shadow: 0 4px 20px rgba(15, 23, 42, 0.15);
       z-index: 1000;
       transform: translateX(120%);
       transition: transform 0.3s ease;
     }
 
-    .notification.show {
-      transform: translateX(0);
+    .notification.show { transform: translateX(0); }
+    .notification.success { background: var(--success); }
+    .notification.error   { background: var(--danger); }
+    .notification.info    { background: var(--accent); }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .wrap { padding: 20px 16px 40px; }
+
+      .page-header { flex-direction: column; }
+
+      .header-actions { width: 100%; }
+      .searchBox { flex: 1; min-width: 0; }
+
+      .controls { flex-direction: column; align-items: stretch; }
+      .filter-group { width: 100%; min-width: 0; }
+      .filter-group .input,
+      .filter-group select { width: 100%; }
+      .filter-actions { width: 100%; }
+      .filter-actions .btn { flex: 1; justify-content: center; }
     }
-
-    .notification.success {
-      background: var(--success);
-    }
-
-    .notification.error {
-      background: var(--danger);
-    }
-
-    .notification.info {
-      background: var(--accent);
-    }
-
-    .empty-state {
-      text-align: center;
-      padding: 40px 20px;
-      color: var(--muted);
-    }
-
-    .empty-state i {
-      font-size: 48px;
-      margin-bottom: 16px;
-      opacity: 0.5;
-    }
-
-    .type-badge {
-      display: inline-block;
-      padding: 4px 8px;
-      border-radius: 6px;
-      font-size: 12px;
-      font-weight: 500;
-    }
-
-    .type-income {
-      background: #d1fae5;
-      color: #065f46;
-    }
-
-    .type-expense {
-      background: #fee2e2;
-      color: #991b1b;
-    }
-
-    .type-transfer {
-      background: #e0e7ff;
-      color: #3730a3;
-    }
-
-    .amount-positive {
-      color: var(--success);
-      font-weight: 600;
-    }
-
-    .amount-negative {
-      color: var(--danger);
-      font-weight: 600;
-    }
-
-    .last-update {
-      font-size: 12px;
-      color: var(--muted);
-      margin-top: 8px;
-    }
-	
-	/* === Bigger, Cleaner Filter Inputs === */
-.controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: flex-end;
-  margin-bottom: 20px;
-}
-
-.filter-group {
-  display: flex;
-  flex-direction: column;
-  min-width: 170px;
-}
-
-.filter-group label {
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 6px;
-  font-size: 15px;
-}
-
-.input {
-  padding: 10px 14px;
-  font-size: 16px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  width: 170px;         /* ✅ Bigger width */
-  height: 42px;         /* ✅ Taller height */
-  transition: all 0.2s ease;
-}
-
-.input:focus {
-  border-color: #3b82f6;
-  box-shadow: 0 0 4px rgba(59, 130, 246, 0.3);
-  outline: none;
-}
-
-/* Buttons */
-.btn {
-  padding: 10px 18px;
-  font-size: 16px;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
-  background: #3b82f6;
-  color: white;
-  transition: 0.2s;
-}
-
-.btn.secondary {
-  background: #6b7280;
-}
-
-.btn:hover {
-  opacity: 0.9;
-}
-
-
-/* ✅ Responsive filter inputs: full width on mobile */
-@media (max-width: 768px) {
-  .controls {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .filter-group {
-    width: 100%;
-  }
-
-  .filter-group .input,
-  .filter-group select {
-    width: 100%;
-  }
-
-  .btn,
-  .btn.secondary {
-    width: 100%;
-    justify-content: center;
-  }
-}
-
-/* Summary Container */
-.summary-container {
-  background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  padding: 20px 24px;
-  margin-top: 24px;
-}
-
-.summary-title {
-  font-size: 1.4em;
-  font-weight: 600;
-  color: #222;
-  margin-bottom: 16px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-/* Inside cards layout */
-.summary-cards {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-}
-
-.summary-cards .card {
-  flex: 1 1 220px;
-  border-radius: 12px;
-  padding: 16px;
-  text-align: left;
-  background: #f9fafc;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-  transition: transform 0.2s ease;
-}
-
-.summary-cards .card:hover {
-  transform: translateY(-3px);
-}
-
-.summary-cards .title {
-  font-size: 0.9em;
-  color: #555;
-  margin-bottom: 6px;
-}
-
-.summary-cards .value {
-  font-size: 1.4em;
-  font-weight: 700;
-  color: #222;
-}
-
-/* Value and Trend Inline Layout */
-.value-trend {
-  display: flex;
-  align-items: flex-start;   /* ✅ aligns both items to the left vertically */
-  justify-content: flex-start; /* ✅ aligns items horizontally to the left */
-  gap: 10px; /* spacing between value and trend icon/text */
-  text-align: left;
-}
-
-.value-trend .value {
-  font-size: 1.4em;
-  font-weight: 700;
-  color: #222;
-  text-align: left;
-}
-
-.value-trend .trend {
-  font-size: 0.9em;
-  color: #666;
-  text-align: left;
-}
-
-
-
   </style>
 </head>
 
 <body>
+  <nav class="top-nav">
+    <a href="index.html" class="nav-brand">
+      <span class="nav-brand-icon">💰</span>
+      Expense Tracker
+    </a>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link">Home</a>
+      <a href="upload.html" class="nav-link">Upload</a>
+      <a href="dashboard.html" class="nav-link active">Dashboard</a>
+    </div>
+    <div class="nav-right">
+      <span id="connBadge" class="conn-badge conn-connecting">Connecting…</span>
+    </div>
+  </nav>
+
+  <div id="loadingOverlay" class="loading-overlay">
+    <div class="spinner-lg"></div>
+    <span>Loading dashboard…</span>
+  </div>
+
   <div class="wrap">
-    <header>
-      <h1><i class="fas fa-chart-line"></i> Expense Tracker Dashboard</h1>
-      <div class="actions">
-        <input id="searchInput" class="searchBox" placeholder="Search notes, category, account..." />
-        <button id="exportCsvBtn" class="btn success"><i class="fas fa-file-csv"></i> Export CSV</button>
-        <button id="exportXlsxBtn" class="btn success"><i class="fas fa-file-excel"></i> Export Excel</button>
-        <button id="refreshBtn" class="btn secondary"><i class="fas fa-sync-alt"></i> Refresh</button>
+
+    <!-- Header -->
+    <div class="page-header">
+      <div class="page-header-left">
+        <div class="logo" aria-hidden="true">📊</div>
+        <div class="page-title-wrap">
+          <span class="badge">Analytics</span>
+          <h1>Expense Dashboard</h1>
+          <p class="page-subtitle">Visualize income, expenses, and category breakdowns.</p>
+        </div>
       </div>
-    </header>
+      <div class="header-actions">
+        <input id="searchInput" class="searchBox" placeholder="Search notes, category, account…" />
+        <button id="exportCsvBtn" class="btn success"><i class="fas fa-file-csv"></i> CSV</button>
+        <button id="exportXlsxBtn" class="btn success"><i class="fas fa-file-excel"></i> Excel</button>
+        <button id="refreshBtn" class="btn secondary"><i class="fas fa-sync-alt"></i> Refresh</button>
+        <a href="index.html" class="btn btn-home"><i class="fas fa-home"></i> Home</a>
+      </div>
+    </div>
 
     <!-- Filters -->
     <div class="controls">
       <div class="filter-group">
-        <label for="fromDate"><i class="fas fa-calendar-alt"></i> From</label>
-        <input id="fromDate" type="date" class="input">
+        <label for="fromDate">From</label>
+        <input id="fromDate" type="date" class="input" />
       </div>
       <div class="filter-group">
-        <label for="toDate"><i class="fas fa-calendar-alt"></i> To</label>
-        <input id="toDate" type="date" class="input">
+        <label for="toDate">To</label>
+        <input id="toDate" type="date" class="input" />
       </div>
       <div class="filter-group">
-        <label for="categorySelect"><i class="fas fa-tags"></i> Category</label>
+        <label for="categorySelect">Category</label>
         <select id="categorySelect" class="input">
           <option value="">All Categories</option>
         </select>
       </div>
       <div class="filter-group">
-        <label for="typeSelect"><i class="fas fa-exchange-alt"></i> Type</label>
+        <label for="typeSelect">Type</label>
         <select id="typeSelect" class="input">
           <option value="">All Types</option>
           <option value="Exp.">Expense</option>
@@ -685,80 +650,80 @@
         </select>
       </div>
       <div class="filter-group">
-        <label for="accountSelect"><i class="fas fa-wallet"></i> Account</label>
+        <label for="accountSelect">Account</label>
         <select id="accountSelect" class="input">
           <option value="">All Accounts</option>
         </select>
       </div>
-      <div style="display:flex;gap:8px;align-items:flex-end;">
+      <div class="filter-actions">
         <button id="applyBtn" class="btn"><i class="fas fa-filter"></i> Apply</button>
         <button id="resetBtn" class="btn secondary"><i class="fas fa-redo"></i> Reset</button>
       </div>
     </div>
 
-    
-<!-- Top summary cards -->
-<div class="top-cards">
-  <div class="card income">
-    <div class="title"><i class="fas fa-arrow-down"></i> Total Income</div>
-    <div id="incomeVal" class="value">₹ 0</div>
-    <div id="incomeTrend" class="trend"></div>
-  </div>
-
-  <div class="card expense">
-    <div class="title"><i class="fas fa-arrow-up"></i> Total Expense</div>
-    <div id="expenseVal" class="value">₹ 0</div>
-    <div id="expenseTrend" class="trend"></div>
-  </div>
-
-  <div class="card balance">
-    <div class="title"><i class="fas fa-balance-scale"></i> Balance</div>
-    <div id="balanceVal" class="value">₹ 0</div>
-    <div id="balanceTrend" class="trend"></div>
-  </div>
-
-  <div class="card count">
-    <div class="title"><i class="fas fa-list"></i> Record Count</div>
-    <div id="countVal" class="value">0</div>
-    <div class="last-update" id="lastUpdate">Last updated: --</div>
-  </div>
-</div>
-
-<!-- 💰 Durga Devi Summary Container -->
-<div class="summary-container">
-  <h2 class="summary-title">💰 Durga Devi Summary</h2>
-
-  <div class="summary-cards">
-    <div class="card income">
-      <div class="title"><i class="fas fa-hand-holding-usd"></i> Debt From (Durga Devi)</div>
-      <div id="durgaIncome" class="value">₹ 0</div>
-      <div class="trend" id="durgaIncomeTrend"></div>
+    <!-- Top summary cards -->
+    <div class="top-cards">
+      <div class="card income">
+        <div class="title"><i class="fas fa-arrow-down"></i> Total Income</div>
+        <div id="incomeVal" class="value">₹ 0</div>
+        <div id="incomeTrend" class="trend"></div>
+      </div>
+      <div class="card expense">
+        <div class="title"><i class="fas fa-arrow-up"></i> Total Expense</div>
+        <div id="expenseVal" class="value">₹ 0</div>
+        <div id="expenseTrend" class="trend"></div>
+      </div>
+      <div class="card balance">
+        <div class="title"><i class="fas fa-balance-scale"></i> Balance</div>
+        <div id="balanceVal" class="value">₹ 0</div>
+        <div id="balanceTrend" class="trend"></div>
+      </div>
+      <div class="card count">
+        <div class="title"><i class="fas fa-list"></i> Record Count</div>
+        <div id="countVal" class="value">0</div>
+        <div class="last-update" id="lastUpdate">Last updated: --</div>
+      </div>
     </div>
 
-    <div class="card expense">
-      <div class="title"><i class="fas fa-credit-card"></i> Debt Settlement (Durga Devi)</div>
-      <div id="durgaExpense" class="value">₹ 0</div>
-      <div class="trend" id="durgaExpenseTrend"></div>
+    <!-- Salary summary -->
+    <div class="salary-summary">
+      <div class="stat-label">💼 Salary-Based Summary</div>
+      <div class="value-trend">
+        <div class="value" id="salarySummaryValue">₹ 0</div>
+        <div class="trend" id="salarySummaryTrend"></div>
+      </div>
     </div>
 
-    <div class="card balance">
-	  <div class="title"><i class="fas fa-scale-balanced"></i> Net Difference to Settle</div>
-	  <div class="value-trend">
-		<div id="durgaBalance" class="value">₹ 0</div>
-		<div class="trend" id="durgaBalanceTrend"></div>
-	  </div>
-	</div>
+    <!-- Durga Devi summary -->
+    <div class="summary-container">
+      <h2 class="summary-title">💰 Durga Devi Summary</h2>
+      <div class="summary-cards">
+        <div class="card income">
+          <div class="title"><i class="fas fa-hand-holding-usd"></i> Durga Devi Income</div>
+          <div id="durgaIncome" class="value">₹ 0</div>
+          <div class="trend" id="durgaIncomeTrend"></div>
+        </div>
+        <div class="card expense">
+          <div class="title"><i class="fas fa-credit-card"></i> Debt Settlement (Durga Devi)</div>
+          <div id="durgaExpense" class="value">₹ 0</div>
+          <div class="trend" id="durgaExpenseTrend"></div>
+        </div>
+        <div class="card balance">
+          <div class="title"><i class="fas fa-scale-balanced"></i> Net Difference</div>
+          <div class="value-trend">
+            <div id="durgaBalance" class="value">₹ 0</div>
+            <div class="trend" id="durgaBalanceTrend"></div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-  </div>
-</div>
-
-
-    <!-- Charts Grid -->
-    <div class="grid" style="margin-top:16px">
+    <!-- Charts -->
+    <div class="grid">
       <div class="panel">
         <h3><i class="fas fa-chart-pie"></i> Expenses by Category</h3>
         <canvas id="pieChart"></canvas>
-        <div style="margin-top:16px; display:flex; gap:8px;">
+        <div class="panel-actions">
           <button id="showAllBtn" class="btn secondary">
             <i class="fas fa-eye"></i> Show All Records
           </button>
@@ -771,29 +736,13 @@
       <div class="panel">
         <h3><i class="fas fa-chart-bar"></i> Monthly Income vs Expense</h3>
         <canvas id="barChart" height="120"></canvas>
-        <h3 style="margin-top:20px;"><i class="fas fa-list-alt"></i> Expense Summary by Category</h3>
+        <h3 style="margin-top:24px;"><i class="fas fa-list-alt"></i> Expense Summary by Category</h3>
         <div id="categorySummary"></div>
       </div>
     </div>
 
-    <!-- Stats Row -->
-    <!--    <div class="stats-row">
-      <div class="stat-item">
-        <div class="stat-label">Average Monthly Expense</div>
-        <div id="avgMonthlyExpense" class="stat-value">₹ 0</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-label">Largest Expense</div>
-        <div id="largestExpense" class="stat-value">₹ 0</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-label">Most Used Category</div>
-        <div id="mostUsedCategory" class="stat-value">--</div>
-      </div>
-    </div>
-
-    <!-- Data Table -->
-    <div class="panel" style="margin-top:16px">
+    <!-- Records table -->
+    <div class="panel" style="margin-top:14px;">
       <h3><i class="fas fa-table"></i> Records</h3>
       <div id="table-container">
         <div class="empty-state">
@@ -802,12 +751,17 @@
         </div>
       </div>
     </div>
+
   </div>
 
   <div id="notification" class="notification"></div>
 
-   <!-- Dashboard logic -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="app-utils.js"></script>
   <script src="dashboard.js"></script>
 </body>
 </html>
-
