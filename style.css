@@ -201,4 +201,24 @@
     font-weight: bold;
   }
   
+  
+  *,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+.container {
+  width: 100%;
+  max-width: 640px;
+}
+
+.actions button {
+  width: 100%;
+}
+
+.preview-container {
+  width: 100%;
+  overflow-x: auto;
+}
 </style>
